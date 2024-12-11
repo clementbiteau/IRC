@@ -31,7 +31,7 @@ struct flags {
 #define RPL_JOIN(user_id, channel) (user_id + " JOIN :" + channel + "\r\n")
 #define RPL_INVITE(user_id, invited, channel) (user_id + " invited " + invited + " in #" + channel + "\r\n")
 #define MSG(color, prefix, msg) (std::cout << color << "[" << prefix << "] " << WHITE << msg << std::endl)
-#define CLIENT_MSG(color, prefix, msg, nb, msg2) (std::cout << color << "[" << prefix << "] " << WHITE << msg << nb << msg2 << std::endl)
+#define CLIENT_MSG(color, prefix, msg, nb, space, msg2) (std::cout << color << "[" << prefix << "] " << WHITE << msg << nb << space << msg2 << std::endl)
 #define ERR(msg) (std::cout << RED << "[ERROR] " << WHITE << msg << std::endl)
 #define ERR_INVALIDMODEPARAM(client, channel, mode, password) ("696 " + client + " #" + channel + " " + mode + " " + password + " : password must only contained alphabetic character\r\n")
 

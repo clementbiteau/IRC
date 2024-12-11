@@ -6,51 +6,63 @@ void	Server::capls(int fd) {
 }
 
 void	Server::pass(int fd, std::istringstream &iss, User *user) {
+
 	std::string password;
 
 	iss >> password;
-	
+
+    if (user->getIsAuth()) {
+        sendErrorMessage(fd, "421 PASS :Already authenticated.\r\n");
+        return;
+    }
+
 	if (password == _password)
+	{
+		user->setIsAuth(true);
 		user->setFlags("isRegistered", true);
+		sendMessage(fd, GREEN "Password correct :Client Registered.\r\n" WHITE);
+	}
 	else
 		sendErrorMessage(fd, ":localhost 464 :Password incorrect\r\n");
 }
 
-void	Server::nick(int fd, std::istringstream &iss, User *user) {
-	std::string nickname;
+void Server::nick(int fd, std::istringstream &iss, User *user) {
+    std::string nickname;
+    iss >> nickname;
 
-	iss >> nickname;
+    if (user->getNickname() == "") {
+        int count = getSameNicknameAmount(nickname);
+        if (count > 0) {
+            nickname += std::to_string(count + 1);
+        }
+        user->setNickname(nickname);
+        std::cout << "fd: " << fd << " | nickname: " << nickname << std::endl;
+        sendMessage(user->getFd(), RPL_WELCOME(nickname));
+        return;
+    }
 
-	if (user->getNickname() == "") {
-		int	count = getSameNicknameAmount(nickname);
-		if (count > 0)
-			nickname += itoa(++count);
-		user->setNickname(nickname);
-		sendMessage(user->getFd(), RPL_WELCOME(nickname));
-		return ;
-	}
+    if (user->getNickname() != nickname) {
+        int count = getSameNicknameAmount(nickname);
+        if (count > 0) {
+            sendMessage(fd, ":localhost 433 " + nickname + " :Nickname is already in use\r\n");
+            return;
+        }
 
-	if (user->getNickname() != "" && user->getNickname() != nickname) {
-		std::string oldNickname = user->getNickname();
-		
-		user->setNickname(nickname);
-		std::string RPLMessage = ":" + oldNickname + " NICK " + nickname + "\r\n";
-		sendMessage(user->getFd(), RPLMessage);
-		return;
-	}
+        std::string oldNickname = user->getNickname();
+        user->setNickname(nickname);
 
-	if (user != NULL && user->getNickname() == "" && user->getFd() != fd) {
-		int	count = getSameNicknameAmount(nickname);
-		if (count > 0)
-			nickname += itoa(++count);
+        std::cout << "fd: " << fd << " | nickname: " << nickname << std::endl;
 
-		user->setNickname(nickname);
-		sendMessage(user->getFd(), RPL_WELCOME(nickname));
-	}
-
+        std::string RPLMessage = ":" + oldNickname + " NICK " + nickname + "\r\n";
+        sendMessage(user->getFd(), RPL_WELCOME(nickname));
+        sendMessageToAllUsers(RPLMessage);
+    } else {
+        sendMessage(fd, ":localhost 433 " + nickname + " :Nickname is unchanged\r\n");
+    }
 }
 
 void	Server::join(int fd, std::istringstream &iss, User *user) {
+
 	std::string channel;
 	std::string password;
 
@@ -96,6 +108,7 @@ void	Server::join(int fd, std::istringstream &iss, User *user) {
 }
 
 void	Server::kick(int fd, std::istringstream &iss, User *user) {
+
 	std::string moderator;
 	std::string channel;
 
@@ -121,6 +134,7 @@ void	Server::kick(int fd, std::istringstream &iss, User *user) {
 }
 
 void   Server::invite(int fd, std::istringstream &iss, User *user) {
+
 	std::string inviter;
 	std::string channel;
 
@@ -138,6 +152,7 @@ void   Server::invite(int fd, std::istringstream &iss, User *user) {
 }
 
 void   Server::topic(int fd, std::istringstream &iss) {
+
 	std::string channel;
 	std::string topic;
 

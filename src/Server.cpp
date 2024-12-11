@@ -58,7 +58,7 @@ std::string	Server::getIp(int fd) {
 int	Server::getSameNicknameAmount(std::string nickname) {
 	int	count = 0;
 	for (size_t i = 0; i < _users.size(); i++) {
-		std::cout << "fd: " << _users[i].getFd() << " | nickname: " << _users[i].getNickname() << std::endl;
+		// std::cout << "fd: " << _users[i].getFd() << " | nickname: " << _users[i].getNickname() << std::endl;
 		if (_users[i].getNickname() == nickname)
 			count++;
 	}
@@ -75,7 +75,7 @@ void	Server::init() {
 	while (Server::_signal == false)
 	{
 		if((poll(&_fds[0], _fds.size(), -1) == -1) && Server::_signal == false)
-			throw(std::runtime_error("poll() faild"));
+			throw(std::runtime_error("poll() failed"));
 
 		for (size_t i = 0; i < _fds.size(); i++)
 		{
@@ -101,17 +101,17 @@ void	Server::createSocket() {
 
 	_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if(_fd == -1)
-		throw(std::runtime_error("faild to create socket"));
+		throw(std::runtime_error("failed to create socket"));
 
 	int en = 1;
 	if(setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &en, sizeof(en)) == -1)
-		throw(std::runtime_error("faild to set option (SO_REUSEADDR) on socket"));
+		throw(std::runtime_error("failed to set option (SO_REUSEADDR) on socket"));
 	if (fcntl(_fd, F_SETFL, O_NONBLOCK) == -1)
-		throw(std::runtime_error("faild to set option (O_NONBLOCK) on socket"));
+		throw(std::runtime_error("failed to set option (O_NONBLOCK) on socket"));
 	if (bind(_fd, (struct sockaddr *)&add, sizeof(add)) == -1)
-		throw(std::runtime_error("faild to bind socket"));
+		throw(std::runtime_error("failed to bind socket"));
 	if (listen(_fd, SOMAXCONN) == -1)
-		throw(std::runtime_error("listen() faild"));
+		throw(std::runtime_error("listen() failed"));
 
 	newPoll.fd = _fd;
 	newPoll.events = POLLIN;
@@ -208,7 +208,7 @@ void	Server::acceptNewClient() {
 
 	client.setUser(&newUser);
 
-	CLIENT_MSG(GREEN, "Client", "Client ", newClientFd, " is connected !");
+	CLIENT_MSG(GREEN, "Client", "Client ", newClientFd, "", " is connected !");
 	// sendMessage(newClientFd, "001 : Welcome to the server !\r\n");
 }
 
@@ -219,13 +219,13 @@ void	Server::receiveData(int fd) {
 	ssize_t bytes = recv(fd, buff, sizeof(buff) - 1 , 0);
 
 	if (bytes <= 0) {
-		CLIENT_MSG(RED, "Client", "Client ", fd, " has been disconnected.");
+		CLIENT_MSG(RED, "Client", "Client ", fd, "", " has been disconnected.");
 		clearClient(fd);
 		close(fd);
 	} else {
 		buff[bytes] = '\0';
-		CLIENT_MSG(BLUE, "Client", "Data received: ", fd, buff);
-		// std::cout << "\n-------------------\nraw data:\n" << buff << "\n------------------------\n" << std::endl;
+		CLIENT_MSG(BLUE, "Client", "Data received: ", fd, " ", buff);
+		std::cout << "\n-------------------\nraw data:\n" << buff << "\n------------------------\n" << std::endl;
 		
 		User *user = getUser(fd);
 		if (!user)
@@ -345,4 +345,10 @@ void Server::whowasCommand(int fd, std::string nickname) {
         }
     }
     sendErrorMessage(fd, "406: There was no history for that nickname.");
+}
+
+void Server::sendMessageToAllUsers(const std::string& message) {
+    for (size_t i = 0; i < _users.size(); i++) {
+        sendMessage(_users[i].getFd(), message);
+    }
 }

@@ -31,11 +31,12 @@ class Server {
 		void			createSocket();
 		void			acceptNewClient();
 		void			receiveData(int fd);
-		void			parseData(int fd, std::string data);
+		void			parseData(int fd, const std::string &data);
 		void			sendErrorMessage(int fd, std::string msg);
 		void			sendMessage(int fd, std::string msg);
 		void			sendMessageToUsers(Channel *chan, std::string authorName, std::string msg);
 		void			createChannel(std::string channelName, User &user);
+		void			sendMessageToAllUsers(const std::string& message);
 
 		static void 	signalHandler(int signum);
 

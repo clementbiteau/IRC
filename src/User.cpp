@@ -6,6 +6,7 @@ User::User() {
 	this->_password = "";
 	this->_flags.first_join_ignore = false;
 	this->_flags.isRegistered = false;
+	this->_isAuth = false;
 }
 
 User::User(int fd, std::string nickname, std::string username, std::string password) {
@@ -15,6 +16,7 @@ User::User(int fd, std::string nickname, std::string username, std::string passw
 	this->_password = password;
 	this->_flags.first_join_ignore = false;
 	this->_flags.isRegistered = false;
+	this->_isAuth = false;
 }
 
 User::~User() {}
@@ -59,6 +61,10 @@ bool User::getIsOperator() const {
     return this->_isOperator;
 }
 
+bool	User::getIsAuth() const {
+	return this->_isAuth;
+}
+
 void User::setIsOperator(bool isOperator) {
     this->_isOperator = isOperator;
 }
@@ -86,4 +92,8 @@ void		User::setFlags(std::string flag, bool value) {
 		this->_flags.first_join_ignore = value;
 	else if (flag == "isRegistered")
 		this->_flags.isRegistered = value;
+}
+
+void	User::setIsAuth(bool status) {
+	this->_isAuth = status;
 }

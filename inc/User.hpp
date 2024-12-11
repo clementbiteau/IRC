@@ -10,6 +10,7 @@ class User {
 		std::string _username;
 		std::string _password;
 		bool		_isOperator;
+		bool		_isAuth;
 		flags		_flags;
 		
 	public:
@@ -27,6 +28,7 @@ class User {
 		std::string	getPassword() const;
 		flags		getFlags() const;
 		bool		getIsOperator() const;
+		bool		getIsAuth() const;
 
 		void		setFd(int fd);
 		void		setNickname(std::string nickname);
@@ -34,6 +36,7 @@ class User {
 		void		setPassword(std::string password);
 		void		setFlags(std::string flag, bool value);
 		void		setIsOperator(bool isOperator);
+		void		setIsAuth(bool status);
 };
 
 #endif
