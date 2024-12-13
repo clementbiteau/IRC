@@ -352,3 +352,32 @@ void Server::sendMessageToAllUsers(const std::string& message) {
         sendMessage(_users[i].getFd(), message);
     }
 }
+
+void Server::usering(int fd, std::istringstream &iss, User *user) {
+
+    if (user->getFlags().isRegistered) {
+        sendMessage(fd, ":localhost 462 :Unauthorized command (already registered)\r\n");
+        return;
+    }
+
+    std::string username, hostname, servername, realname;
+    iss >> username >> hostname >> servername;
+    std::getline(iss, realname);
+
+    if (!realname.empty() && realname[0] == ':') {
+        realname = realname.substr(1);
+    }
+
+    user->setUsername(username);
+
+    std::cout << "USER command processed: username=" << username << ", realname=" << realname << std::endl;
+
+    if (!user->getNickname().empty()) {
+        user->setFlags("isRegistered", true); // User is fully registered ok to proceed
+        sendMessage(fd, RPL_WELCOME(user->getNickname()));
+    } 
+	else {
+        // NICK not set yet; wait for it
+        sendMessage(fd, ":localhost 001 :Waiting for NICK command to complete registration.\r\n");
+    }
+}

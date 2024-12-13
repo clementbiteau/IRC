@@ -5,42 +5,62 @@ void	Server::capls(int fd) {
 	sendMessage(fd, "CAP * LS :PASS NICK USER JOIN PART LIST PRIVMSG NOTICE MODE KICK INVITE TOPIC PING QUIT\r\n");
 }
 
-void	Server::pass(int fd, std::istringstream &iss, User *user) {
+void Server::pass(int fd, std::istringstream &iss, User *user) {
+    std::string password;
 
-	std::string password;
+    iss >> password;
 
-	iss >> password;
-
+    // Check if user is already authenticated
     if (user->getIsAuth()) {
         sendErrorMessage(fd, "421 PASS :Already authenticated.\r\n");
         return;
     }
 
-	if (password == _password)
-	{
-		user->setIsAuth(true);
-		user->setFlags("isRegistered", true);
-		sendMessage(fd, GREEN "Password correct :Client Registered.\r\n" WHITE);
-	}
-	else
-		sendErrorMessage(fd, ":localhost 464 :Password incorrect\r\n");
+    if (password == _password) {
+        user->setIsAuth(true);
+        std::cout << "[DEBUG] User " << user->getFd() << " authenticated successfully." << std::endl;
+
+        if (!user->getNickname().empty()) {
+            user->setFlags("isRegistered", true);
+            sendMessage(fd, GREEN "Password correct :Client Registered.\r\n" WHITE);
+        } else {
+            sendMessage(fd, GREEN "Password correct, awaiting NICK command to complete registration.\r\n" WHITE);
+        }
+    } else {
+        sendErrorMessage(fd, ":localhost 464 :Password incorrect\r\n");
+    }
 }
+
 
 void Server::nick(int fd, std::istringstream &iss, User *user) {
     std::string nickname;
     iss >> nickname;
 
-    if (user->getNickname() == "") {
+    if (nickname.empty()) {
+        sendMessage(fd, ":localhost 431 :No nickname given\r\n");
+        return;
+    }
+
+    if (user->getNickname().empty()) { // First-time nickname assignment
         int count = getSameNicknameAmount(nickname);
         if (count > 0) {
             nickname += std::to_string(count + 1);
         }
         user->setNickname(nickname);
+
         std::cout << "fd: " << fd << " | nickname: " << nickname << std::endl;
-        sendMessage(user->getFd(), RPL_WELCOME(nickname));
+
+        if (!user->getUsername().empty()) {
+            user->setFlags("isRegistered", true);
+            sendMessage(fd, RPL_WELCOME(nickname));
+        } 
+		else {
+            sendMessage(fd, ":localhost 001 :Waiting for USER command to complete registration.\r\n");
+        }
         return;
     }
 
+    // Nickname change
     if (user->getNickname() != nickname) {
         int count = getSameNicknameAmount(nickname);
         if (count > 0) {
@@ -54,12 +74,15 @@ void Server::nick(int fd, std::istringstream &iss, User *user) {
         std::cout << "fd: " << fd << " | nickname: " << nickname << std::endl;
 
         std::string RPLMessage = ":" + oldNickname + " NICK " + nickname + "\r\n";
-        sendMessage(user->getFd(), RPL_WELCOME(nickname));
+        sendMessage(fd, RPLMessage);
+
         sendMessageToAllUsers(RPLMessage);
-    } else {
+    } 
+	else {
         sendMessage(fd, ":localhost 433 " + nickname + " :Nickname is unchanged\r\n");
     }
 }
+
 
 void	Server::join(int fd, std::istringstream &iss, User *user) {
 

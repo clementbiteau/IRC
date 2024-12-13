@@ -39,12 +39,13 @@ III. Partie "Utils"
 
 => A) Commandes
       - Il y aura forcément un moment où l'on devra recoder les commandes existantes:
-        ° JOIN
-        ° NICK
-        ° QUIT
-        ° MODE
-        ° WHOIS
-        ° PRVMSG
+      ° PASS -> ok
+      ° JOIN
+      ° NICK -> ok
+      ° QUIT -> ok
+      ° MODE
+      ° WHOIS
+      ° PRVMSG
        
 => B) Travailler sur une bonne nomenclature de nos enums:
       - le @ devant un operateur
@@ -52,3 +53,5 @@ III. Partie "Utils"
       - etc.
       - C'est important car notre serveur irc va devoir renvoyer des replies, 
         donc selon la requête faite par un client, il faut qu'on puisse renvoyer une reply adéquate
+
+

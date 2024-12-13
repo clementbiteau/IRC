@@ -1,4 +1,5 @@
 # include "User.hpp"
+# include "Server.hpp"
 
 User::User() {
 	this->_nickname = "";

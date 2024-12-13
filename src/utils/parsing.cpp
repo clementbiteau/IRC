@@ -66,16 +66,23 @@ void Server::parseData(int fd, const std::string &data) {
         return;
     }
 
+    // INITIAL registration -> obligatory for any safe IRC
+    if (user->getIsAuth() && !user->getFlags().isRegistered) {
+        if (command == "PASS" || command == "NICK" || command == "USER") {
+        } else {
+            sendErrorMessage(fd, "451 :You need to register first\r\n");
+            return;
+        }
+    }
+
     if (command == "PASS") {
         pass(fd, iss, user);
-    } else if (command == "NICK" && user->getFlags().isRegistered) {
+    } else if (command == "NICK") {
         nick(fd, iss, user);
+    } else if (command == "USER") {
+        usering(fd, iss, user);
     } else if (command == "KICK") {
         kick(fd, iss, user);
-    } else if (command == "USER") {
-        std::string output;
-        iss >> output;
-        user->setUsername(output);
     } else if (command == "INVITE") {
         invite(fd, iss, user);
     } else if (command == "TOPIC") {
@@ -89,12 +96,11 @@ void Server::parseData(int fd, const std::string &data) {
     } else if (command == "QUIT") {
         sendMessage(fd, "Goodbye!\r\n");
         close(fd);
-    }  else if (command == "CAP") {
+    } else if (command == "CAP") {
         capls(fd);
-	} else if (command == "MODE") {
+    } else if (command == "MODE") {
         mode(fd, iss);
-    }
-    else {
+    } else {
         if (!user->getFlags().isRegistered)
             sendErrorMessage(fd, "451 :You need to register first\r\n");
         else

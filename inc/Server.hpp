@@ -51,6 +51,7 @@ class Server {
 		void			topic(int fd, std::istringstream &iss);
 		void			mode(int fd, std::istringstream &iss);
 		void			capls(int fd);
+		void			usering(int fd, std::istringstream &iss, User *user);
 		void			partCommand(int fd, std::string channelName, std::string message = "");
 		void			privmsgCommand(int fd, std::string target, std::string message);
 		void			whoisCommand(int fd, std::string nickname);
