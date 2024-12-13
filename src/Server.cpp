@@ -355,29 +355,28 @@ void Server::sendMessageToAllUsers(const std::string& message) {
 
 void Server::usering(int fd, std::istringstream &iss, User *user) {
 
-    if (user->getFlags().isRegistered) {
-        sendMessage(fd, ":localhost 462 :Unauthorized command (already registered)\r\n");
-        return;
-    }
+    std::string username;
+    std::string hostname;
+    std::string servername;
+    std::string realname;
 
-    std::string username, hostname, servername, realname;
     iss >> username >> hostname >> servername;
-    std::getline(iss, realname);
+    std::getline(iss, realname);  // Capture everything after the 3rd parameter
 
-    if (!realname.empty() && realname[0] == ':') {
-        realname = realname.substr(1);
+    // Remove leading spaces from realname if present
+    if (!realname.empty() && realname[0] == ' ') {
+        realname.erase(0, 1);  // Remove the leading space
     }
 
     user->setUsername(username);
+    std::cout << "USER command processed: username : " << username 
+              << ", realname " << realname << std::endl;
 
-    std::cout << "USER command processed: username=" << username << ", realname=" << realname << std::endl;
-
+    // Respond with welcome message if nickname is set
     if (!user->getNickname().empty()) {
-        user->setFlags("isRegistered", true); // User is fully registered ok to proceed
-        sendMessage(fd, RPL_WELCOME(user->getNickname()));
-    } 
-	else {
-        // NICK not set yet; wait for it
+        user->setFlags("isRegistered", true); // User is fully registered, ok to proceed
+        sendMessage(fd, ":localhost 001 " + user->getNickname() + " :Welcome to the server " + user->getUsername() + "\r\n");
+    } else {
         sendMessage(fd, ":localhost 001 :Waiting for NICK command to complete registration.\r\n");
     }
 }

@@ -40,7 +40,8 @@ III. Partie "Utils"
 => A) Commandes
       - Il y aura forcément un moment où l'on devra recoder les commandes existantes:
       ° PASS -> ok
-      ° JOIN
+      ° USER -> ok
+      ° JOIN -> ok
       ° NICK -> ok
       ° QUIT -> ok
       ° MODE

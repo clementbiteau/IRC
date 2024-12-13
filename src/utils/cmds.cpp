@@ -18,7 +18,7 @@ void Server::pass(int fd, std::istringstream &iss, User *user) {
 
     if (password == _password) {
         user->setIsAuth(true);
-        std::cout << "[DEBUG] User " << user->getFd() << " authenticated successfully." << std::endl;
+        std::cout << "User " << user->getFd() << " authenticated successfully." << std::endl;
 
         if (!user->getNickname().empty()) {
             user->setFlags("isRegistered", true);
@@ -83,51 +83,51 @@ void Server::nick(int fd, std::istringstream &iss, User *user) {
     }
 }
 
+void Server::join(int fd, std::istringstream &iss, User *user) {
+    std::string channel;
+    std::string password;
 
-void	Server::join(int fd, std::istringstream &iss, User *user) {
+    iss >> channel;
+    iss >> password;
 
-	std::string channel;
-	std::string password;
+    // Log the join attempt from the user
+    std::cout << "User " << user->getNickname() << " attempting to join channel " << channel << "..." << std::endl;
 
-	iss >> channel;
-	iss >> password;
+    Channel *chan = getChannel(channel);
+    if (chan == NULL) {
+        createChannel(channel, *user);
+        std::cout << "User " << user->getNickname() << " created and joined channel " << channel << std::endl;
+        return;
+    }
+    std::cout << "Channel #" << channel << " exists, checking password" << std::endl;
 
-	std::cout << "ok" << std::endl;
-	if (!user->getFlags().first_join_ignore) {
-		user->setFlags("first_join_ignore", true);
-		return ;
-	}
+    if (chan->getChannelPassword() != "" && password != chan->getChannelPassword()) {
+        sendErrorMessage(fd, "475 " + channel + " :Bad channel password\r\n");
+        std::cout << "User: " << user->getNickname() << " failed to join channel #" << channel << " due to incorrect password" << std::endl;
+        return;
+    }
 
-	std::cout << "ok1" << std::endl;
-	Channel *chan = getChannel(channel);
-	if (chan == NULL) {
-		createChannel(channel, *user);
-		return;
-	}
+    // Is user a member ?
+    for (size_t i = 0; i < chan->getMembersList().size(); i++) {
+        if (chan->getMembersList()[i].getNickname() == user->getNickname()) {
+            sendErrorMessage(fd, "443 " + channel + " :is already a member of the channel\r\n");
+            std::cout << "User: " << user->getNickname() << " is already a member of channel #" << channel << std::endl;
+            return;
+        }
+    }
 
-	std::cout << "ok2" << std::endl;
-	if (chan->getChannelPassword() != "" && password != chan->getChannelPassword()) {
-		sendErrorMessage(fd, "475 " + channel + " :Bad channel password\r\n");
-		return ;
-	}
+    // Add user and broadcast info
+    std::string notification = user->getNickname() + " has joined the channel.";
+    chan->sendMessageToChannel(notification, user->getNickname());
+    chan->addUser(*user);
 
-	std::cout << "ok3" << std::endl;
-	for (size_t i = 0; i < chan->getMembersList().size(); i++) {
-		if (chan->getMembersList()[i].getNickname() == user->getNickname()) {
-			sendErrorMessage(fd, "443 " + channel + " :is already a member of the channel\r\n");
-			return ;
-		}
-	}
+    // Output in User -> info of channel Topic / Participants / End of Names List
+    std::string joinMessage = RPL_TOPIC(user->getNickname(), chan->getChannelName(), chan->getChannelTopic()) + 
+                                RPL_NAMREPLY(user->getNickname(), chan->getChannelName(), chan->getMembersListNames()) + 
+                                RPL_ENDOFNAMES(user->getNickname(), chan->getChannelName());
+    sendMessage(fd, joinMessage);
 
-	std::cout << "ok4" << std::endl;
-	std::string notification = "joined the channel";
-	chan->sendMessageToChannel(notification, user->getNickname());
-	chan->addUser(*user);
-	std::string joinMessage = RPL_TOPIC(user->getNickname(), chan->getChannelName(), chan->getChannelTopic())		+ 
-									RPL_NAMREPLY(user->getNickname(), chan->getChannelName(), chan->getMembersListNames())	+ 
-									RPL_ENDOFNAMES(user->getNickname(), chan->getChannelName());
-	sendMessage(fd, joinMessage);
-	// usleep(50000);
+    std::cout << "User " << user->getNickname() << " successfully joined channel #" << channel << std::endl;
 }
 
 void	Server::kick(int fd, std::istringstream &iss, User *user) {
