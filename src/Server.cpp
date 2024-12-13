@@ -380,3 +380,12 @@ void Server::usering(int fd, std::istringstream &iss, User *user) {
         sendMessage(fd, ":localhost 001 :Waiting for NICK command to complete registration.\r\n");
     }
 }
+
+User*	Server::getUserByNickname(const std::string& nickname) {
+    for (size_t i = 0; i < _users.size(); ++i) {
+        if (_users[i].getNickname() == nickname) {
+            return &_users[i];
+        }
+    }
+    return nullptr;
+}

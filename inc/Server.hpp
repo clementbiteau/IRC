@@ -25,7 +25,7 @@ class Server {
 		User			*getUser(int fd);
 		std::string		getIp(int fd);
 		int				getSameNicknameAmount(std::string nickname);
-
+		User*			getUserByNickname(const std::string& nickname);
 
 		void			init();
 		void			createSocket();
@@ -48,7 +48,7 @@ class Server {
 		void			join(int fd, std::istringstream &iss, User *user);
 		void			kick(int fd, std::istringstream &iss, User *user);
 		void			invite(int fd, std::istringstream &iss, User *user);
-		void			topic(int fd, std::istringstream &iss);
+		void			topic(int fd, std::istringstream &iss, User *user);
 		void			mode(int fd, std::istringstream &iss);
 		void			capls(int fd);
 		void			usering(int fd, std::istringstream &iss, User *user);

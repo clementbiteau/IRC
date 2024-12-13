@@ -86,7 +86,7 @@ void Server::parseData(int fd, const std::string &data) {
     } else if (command == "INVITE") {
         invite(fd, iss, user);
     } else if (command == "TOPIC") {
-        topic(fd, iss);
+        topic(fd, iss, user);
     } else if (command == "PING") {
         std::string output;
         iss >> output;

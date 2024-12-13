@@ -72,6 +72,28 @@ const std::string Channel::getMembersListNames() const
 	return names;
 }
 
+User* Channel::getUserByNickname(const std::string& nickname)
+{
+    for (size_t i = 0; i < _users.size(); ++i)
+    {
+        if (_users[i].getNickname() == nickname)
+        {
+            return &_users[i];
+        }
+    }
+    return nullptr;
+}
+
+bool Channel::isUserInChannel(const User &user) const
+{
+    for (size_t i = 0; i < _users.size(); ++i)
+    {
+        if (_users[i].getNickname() == user.getNickname())
+            return true;
+    }
+    return false;
+}
+
 const std::vector<std::string> &Channel::getModesList() const
 {
 	return this->_modes;
@@ -129,15 +151,16 @@ void Channel::removeMode(std::string mode)
 	}
 }
 
-void Channel::addUser(User user)
-{
-	for (size_t i = 0; i < this->_users.size(); ++i)
-	{
-		if (this->_users[i].getNickname() == user.getNickname())
-			return ;
-	}
-	this->_users.push_back(user);
+void Channel::addUser(User& user) {
+    for (size_t i = 0; i < _users.size(); i++) {
+        if (_users[i].getNickname() == user.getNickname()) {
+            std::cout << "Warning: User " << user.getNickname() << " is already in the channel." << std::endl;
+            return;
+        }
+    }
+    _users.push_back(user);
 }
+
 
 void Channel::removeUser(User user)
 {
@@ -151,21 +174,32 @@ void Channel::removeUser(User user)
 	}
 }
 
+bool Channel::isOperator(const User &user) const {
+    for (std::vector<User>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
+        if (it->getNickname() == user.getNickname()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Channel::addOperator(User user)
 {
-	this->_operators.push_back(user);
+    if (!isOperator(user)) {
+        _operators.push_back(user);
+    }
 }
 
 void Channel::removeOperator(User user)
 {
-	for (size_t i = 0; i < this->_operators.size(); ++i)
+    for (std::vector<User>::iterator it = _operators.begin(); it != _operators.end(); ++it) 
 	{
-		if (this->_operators[i].getNickname() == user.getNickname())
+        if (it->getNickname() == user.getNickname()) 
 		{
-			this->_operators.erase(this->_operators.begin() + i);
-			return ;
-		}
-	}
+            _operators.erase(it);
+            break;
+        }
+    }
 }
 
 void Channel::sendMessageToChannel(std::string message, std::string author)

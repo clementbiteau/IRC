@@ -2,7 +2,7 @@
 
 static bool checkPort(int port) {
 	if (port < 1024 || port > 49151) {
-		ERR("Invalid port number. He must be between 1024 and 49151.");
+		ERR("Invalid port number. It must be between 1024 and 49151.");
 		return false;
 	}
 	return true;
@@ -10,7 +10,7 @@ static bool checkPort(int port) {
 
 static bool checkPassword(std::string password) {
 	if (password.empty()) {
-		ERR("Invalid password. He must not be empty.");
+		ERR("Invalid password. It must not be empty.");
 		return false;
 	}
 	return true;

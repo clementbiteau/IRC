@@ -28,6 +28,10 @@ class Channel {
 		const std::string					getMembersListNames() const ;
 		const std::vector<std::string>		&getModesList() const ;
 		const std::vector<std::string>		&getMessageHistory() const ;
+		User*								getUserByNickname(const std::string& nickname);
+		bool								isUserInChannel(const User& user) const;
+		bool 								isOperator(const User &user) const;
+
 
 		void								setChannelName(std::string name);
 		void								setChannelTopic(std::string topic);
@@ -39,7 +43,7 @@ class Channel {
 		
 		void								addMode(std::string mode);
 		void								removeMode(std::string mode);
-		void								addUser(User user);
+		void								addUser(User &user);
 		void								removeUser(User user);
 		void								addOperator(User user);
 		void								removeOperator(User user);
