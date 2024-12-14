@@ -48,6 +48,7 @@ class Channel {
 		void								addOperator(User user);
 		void								removeOperator(User user);
 		void								sendMessageToChannel(std::string message, std::string author);
+		void								sendMessageToChannelPrv(std::string message, std::string author, int senderFd);
 		void								addMessageToHistory(std::string message);
 
 };

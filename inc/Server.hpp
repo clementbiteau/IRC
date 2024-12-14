@@ -26,6 +26,8 @@ class Server {
 		std::string		getIp(int fd);
 		int				getSameNicknameAmount(std::string nickname);
 		User*			getUserByNickname(const std::string& nickname);
+		std::string		getUserChannels(const User& user);
+
 
 		void			init();
 		void			createSocket();
@@ -54,6 +56,6 @@ class Server {
 		void			usering(int fd, std::istringstream &iss, User *user);
 		void			partCommand(int fd, std::string channelName, std::string message = "");
 		void			privmsgCommand(int fd, std::string target, std::string message);
-		void			whoisCommand(int fd, std::string nickname);
+		void			whoisCommand(int fd, const std::string& requester, const std::string& nickname);
 		void			whowasCommand(int fd, std::string nickname);
 };

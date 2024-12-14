@@ -55,6 +55,19 @@ std::string	Server::getIp(int fd) {
     return std::string(inet_ntoa(addr.sin_addr));
 }
 
+std::string Server::getUserChannels(const User& user) {
+    std::string channels;
+    for (size_t i = 0; i < _channels.size(); i++) {
+        if (_channels[i].isUserInChannel(user)) {
+            if (!channels.empty()) {
+                channels += " ";
+            }
+            channels += _channels[i].getChannelName();
+        }
+    }
+    return channels;
+}
+
 int	Server::getSameNicknameAmount(std::string nickname) {
 	int	count = 0;
 	for (size_t i = 0; i < _users.size(); i++) {
@@ -297,30 +310,43 @@ void Server::partCommand(int fd, std::string channelName, std::string message) {
 void Server::privmsgCommand(int fd, std::string target, std::string message) {
     User *user = getUser(fd);
     if (!user) {
-        sendErrorMessage(fd, "401: No such nick.");
+        sendErrorMessage(fd, "451 :You're not registered\r\n");
         return;
     }
+
+    if (message.empty()) {
+        sendErrorMessage(fd, "412 :No text to send\r\n");
+        return;
+    }
+
+    if (target.empty()) {
+        sendErrorMessage(fd, "411 :No recipient given (PRIVMSG)\r\n");
+        return;
+    }
+
+    // Channel broadcast
     if (target[0] == '#') {
         Channel *channel = getChannel(target);
         if (!channel) {
-            sendErrorMessage(fd, "403: No such channel.");
+            sendErrorMessage(fd, "403 " + target + " :No such channel\r\n");
             return;
         }
-        channel->sendMessageToChannel(message, user->getNickname());
+        channel->sendMessageToChannelPrv(message, user->getNickname(), fd);  // Exclude sender
     }
-	else
-	{
+    // Private message to a user
+    else {
         for (size_t i = 0; i < _users.size(); i++) {
             if (_users[i].getNickname() == target) {
-                sendMessage(_users[i].getFd(), ":" + user->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n");
+                sendMessage(_users[i].getFd(), ":" + user->getNickname() + 
+                            " PRIVMSG " + target + " :" + message + "\r\n");
                 return;
             }
         }
-        sendErrorMessage(fd, "401: No such nick.");
+        sendErrorMessage(fd, "401 " + target + " :No such nick/channel\r\n");
     }
 }
 
-void Server::whoisCommand(int fd, std::string nickname) {
+void Server::whoisCommand(int fd, const std::string& requester, const std::string& nickname) {
     User *user = nullptr;
     for (size_t i = 0; i < _users.size(); i++) {
         if (_users[i].getNickname() == nickname) {
@@ -329,11 +355,16 @@ void Server::whoisCommand(int fd, std::string nickname) {
         }
     }
     if (!user) {
-        sendErrorMessage(fd, "401: No such nick.");
+        sendErrorMessage(fd, "401 " + requester + " " + nickname + " :No such nick\r\n");
         return;
     }
-    std::string whoisResponse = "311 " + nickname + " " + user->getUsername() + " :User info\r\n";
+
+    std::string whoisResponse = "311 " + requester + " " + nickname + " " +
+                                user->getUsername() + " localhost * :" +
+                                user->getRealName() + "\r\n";
     sendMessage(fd, whoisResponse);
+
+    sendMessage(fd, "318 " + requester + " :End of WHOIS list\r\n");
 }
 
 void Server::whowasCommand(int fd, std::string nickname) {
@@ -354,28 +385,34 @@ void Server::sendMessageToAllUsers(const std::string& message) {
 }
 
 void Server::usering(int fd, std::istringstream &iss, User *user) {
-
-    std::string username;
-    std::string hostname;
-    std::string servername;
-    std::string realname;
+    std::string username, hostname, servername, realname;
 
     iss >> username >> hostname >> servername;
-    std::getline(iss, realname);  // Capture everything after the 3rd parameter
+    std::getline(iss, realname);
 
-    // Remove leading spaces from realname if present
-    if (!realname.empty() && realname[0] == ' ') {
-        realname.erase(0, 1);  // Remove the leading space
+    size_t start = realname.find_first_not_of(" ");
+    if (start != std::string::npos) {
+        realname = realname.substr(start);
+    }
+    if (!realname.empty() && realname[0] == ':') {
+        realname.erase(0, 1);
+    }
+    size_t end = realname.find_last_not_of(" ");
+    if (end != std::string::npos) {
+        realname.erase(end + 1);
     }
 
     user->setUsername(username);
-    std::cout << "USER command processed: username : " << username 
-              << ", realname " << realname << std::endl;
+    user->setRealName(realname);
 
-    // Respond with welcome message if nickname is set
+    std::cout << "USER command processed: username: " << username 
+              << ", realname: " << realname << std::endl;
+
+    // Complete registration if nickname is already set
     if (!user->getNickname().empty()) {
-        user->setFlags("isRegistered", true); // User is fully registered, ok to proceed
-        sendMessage(fd, ":localhost 001 " + user->getNickname() + " :Welcome to the server " + user->getUsername() + "\r\n");
+        user->setFlags("isRegistered", true);
+        sendMessage(fd, ":localhost 001 " + user->getNickname() + 
+                    " :Welcome to the server " + user->getUsername() + "\r\n");
     } else {
         sendMessage(fd, ":localhost 001 :Waiting for NICK command to complete registration.\r\n");
     }

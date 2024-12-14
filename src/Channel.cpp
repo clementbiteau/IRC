@@ -161,7 +161,6 @@ void Channel::addUser(User& user) {
     _users.push_back(user);
 }
 
-
 void Channel::removeUser(User user)
 {
 	for (size_t i = 0; i < this->_users.size(); ++i)
@@ -223,6 +222,29 @@ void Channel::sendMessageToChannel(std::string message, std::string author)
 	}
 	addMessageToHistory(msg);
 	return;
+}
+
+void Channel::sendMessageToChannelPrv(std::string message, std::string author, int senderFd) {
+    // Construct message to broadcast
+    std::string msg = ":" + author + " PRIVMSG " + this->getChannelName() + " :" + message + "\r\n";
+    std::cout << "Author: " << author << std::endl;
+
+    // Iterate over users in the channel
+    for (size_t i = 0; i < _users.size(); ++i) {
+        std::cout << "User " << i << " : " << _users[i].getNickname() << std::endl;
+
+        // Skip the sender by comparing file descriptors
+        if (_users[i].getFd() == senderFd) {
+            continue;
+        }
+
+        // Send the message
+        int bytes = send(_users[i].getFd(), msg.c_str(), msg.size(), MSG_DONTWAIT);
+        if (bytes <= 0) {
+            std::cout << "Notice: User [" << _users[i].getNickname()
+                      << "] cannot be reached and will be removed from the channel." << std::endl;
+        }
+    }
 }
 
 void Channel::addMessageToHistory(std::string message)

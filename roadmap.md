@@ -47,8 +47,9 @@ III. Partie "Utils"
       ° INVITE -> ok
       ° TOPIC -> ok
       ° MODE :: not checked yet
-      ° WHOIS -> being checked
-      ° PRVMSG :: not checked yet
+      ° WHOIS -> ok
+      ° WHOWAS ->
+      ° PRVMSG -> ok
        
 => B) Travailler sur une bonne nomenclature de nos enums:
       - le @ devant un operateur

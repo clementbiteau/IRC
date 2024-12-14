@@ -96,8 +96,24 @@ void Server::parseData(int fd, const std::string &data) {
     } else if (command == "QUIT") {
         sendMessage(fd, "Goodbye!\r\n");
         close(fd);
+    } else if (command == "PRIVMSG") {
+        std::string target;
+        std::string message;
+        iss >> target;
+        std::getline(iss, message);
+        if (!message.empty() && message[0] == ' ') {
+        message.erase(0, 1);
+        }
+        privmsgCommand(fd, target, message);
     } else if (command == "CAP") {
         capls(fd);
+    } else if (command == "WHOIS"){
+        std::string nickname;
+        iss >> nickname;
+        if (nickname.empty())
+            sendErrorMessage(fd, "431 :No nickname given\r\n");
+        else
+            whoisCommand(fd, user->getNickname(), nickname);
     } else if (command == "MODE") {
         mode(fd, iss);
     } else {
