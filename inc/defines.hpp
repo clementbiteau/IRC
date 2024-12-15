@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <algorithm>
+#include <unordered_set>
 #include <poll.h>
 #include <csignal>
 #include <stdlib.h>

@@ -348,13 +348,24 @@ void Server::privmsgCommand(int fd, std::string target, std::string message) {
 
 void Server::whoisCommand(int fd, const std::string& requester, const std::string& nickname) {
     User *user = nullptr;
+
+    // Check if the user is in the active _users list
     for (size_t i = 0; i < _users.size(); i++) {
         if (_users[i].getNickname() == nickname) {
             user = &_users[i];
             break;
         }
     }
+
     if (!user) {
+        // User not found in _users, check _disconnectedUsers
+        for (size_t i = 0; i < _disconnectedUsers.size(); i++) {
+            if (_disconnectedUsers[i].getNickname() == nickname) {
+                std::string errorMessage = "401 " + requester + " " + nickname + " :No such nick (user disconnected)\r\n";
+                sendMessage(fd, errorMessage);
+                return;
+            }
+        }
         sendErrorMessage(fd, "401 " + requester + " " + nickname + " :No such nick\r\n");
         return;
     }
@@ -363,19 +374,20 @@ void Server::whoisCommand(int fd, const std::string& requester, const std::strin
                                 user->getUsername() + " localhost * :" +
                                 user->getRealName() + "\r\n";
     sendMessage(fd, whoisResponse);
-
     sendMessage(fd, "318 " + requester + " :End of WHOIS list\r\n");
 }
 
-void Server::whowasCommand(int fd, std::string nickname) {
+void	Server::whowasCommand(int fd, const std::string& nickname) {
+    // Check _disconnectedUsers for the nickname
     for (size_t i = 0; i < _disconnectedUsers.size(); i++) {
         if (_disconnectedUsers[i].getNickname() == nickname) {
-            std::string whowasResponse = "314 " + nickname + " " + _disconnectedUsers[i].getUsername() + " :User history\r\n";
+            std::string whowasResponse = "314 " + nickname + " " + _disconnectedUsers[i].getUsername() +
+                                         " " + _disconnectedUsers[i].getRealName() + " :User Disconnected\r\n";
             sendMessage(fd, whowasResponse);
             return;
         }
     }
-    sendErrorMessage(fd, "406: There was no history for that nickname.");
+    sendErrorMessage(fd, "401 " + nickname + " :No such nick\r\n");
 }
 
 void Server::sendMessageToAllUsers(const std::string& message) {

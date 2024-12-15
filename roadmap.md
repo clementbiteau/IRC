@@ -46,9 +46,13 @@ III. Partie "Utils"
       ° QUIT -> ok
       ° INVITE -> ok
       ° TOPIC -> ok
-      ° MODE :: not checked yet
+      ° MODE -> ok
+            - i -> ok
+            - t -> ok
+            - k -> ok
+            - o -> ok
+            - l -> ok
       ° WHOIS -> ok
-      ° WHOWAS ->
       ° PRVMSG -> ok
        
 => B) Travailler sur une bonne nomenclature de nos enums:

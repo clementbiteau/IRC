@@ -57,5 +57,5 @@ class Server {
 		void			partCommand(int fd, std::string channelName, std::string message = "");
 		void			privmsgCommand(int fd, std::string target, std::string message);
 		void			whoisCommand(int fd, const std::string& requester, const std::string& nickname);
-		void			whowasCommand(int fd, std::string nickname);
+		void			whowasCommand(int fd, const std::string& nickname);
 };

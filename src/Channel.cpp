@@ -173,30 +173,42 @@ void Channel::removeUser(User user)
 	}
 }
 
-bool Channel::isOperator(const User &user) const {
-    for (std::vector<User>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
-        if (it->getNickname() == user.getNickname()) {
+bool Channel::isOperator(const std::string& nickname) const {
+    for (size_t i = 0; i < _operators.size(); ++i) {
+        if (_operators[i].getNickname() == nickname) {
             return true;
         }
     }
     return false;
 }
 
-void Channel::addOperator(User user)
-{
-    if (!isOperator(user)) {
-        _operators.push_back(user);
+bool Channel::isOperator(const User& user) const {
+    for (size_t i = 0; i < _operators.size(); ++i) {
+        if (_operators[i].getNickname() == user.getNickname()) {
+            return true;
+        }
     }
+    return false;
 }
 
-void Channel::removeOperator(User user)
-{
-    for (std::vector<User>::iterator it = _operators.begin(); it != _operators.end(); ++it) 
-	{
-        if (it->getNickname() == user.getNickname()) 
+bool Channel::addOperator(const std::string& nickname) {
+    User* user = getUserByNickname(nickname);
+    if (!user) {
+        return false;
+    }
+    if (isOperator(nickname)) {
+        return false;
+    }
+    _operators.push_back(*user);
+    return true;
+}
+
+void Channel::removeOperator(const std::string& nickname) {
+    for (size_t i = 0; i < _operators.size(); ++i) {
+        if (_operators[i].getNickname() == nickname) 
 		{
-            _operators.erase(it);
-            break;
+            _operators.erase(_operators.begin() + i);
+            return;
         }
     }
 }
@@ -285,4 +297,56 @@ std::ostream    &operator<<(std::ostream &flux, const Channel& src)
 	}
 	flux << std::endl;
 	return flux;
+}
+
+bool Channel::isInviteOnly() const {
+    return _inviteOnly;
+}
+
+void Channel::setInviteOnly(bool enable) {
+    _inviteOnly = enable;
+}
+
+bool Channel::isTopicRestricted() const {
+    return _topicRestricted;
+}
+
+void Channel::setTopicRestriction(bool enable) {
+    _topicRestricted = enable;
+}
+
+size_t Channel::getUserLimit() const {
+    return _userLimit;
+}
+
+void Channel::setUserLimit(int limit) {
+    _userLimit = limit;
+}
+
+void Channel::clearUserLimit() {
+    _userLimit = 0;
+}
+
+bool Channel::hasPassword() const {
+    return !_password.empty();
+}
+
+void Channel::setPassword(const std::string& password) {
+    _password = password;
+}
+
+void Channel::clearPassword() {
+    _password.clear();
+}
+
+bool Channel::isUserInvited(const std::string& nickname) {
+    return _invitedUsers.find(nickname) != _invitedUsers.end();
+}
+
+void Channel::addInvitedUser(const std::string& nickname) {
+    _invitedUsers.insert(nickname);
+}
+
+void Channel::removeInvitedUser(const std::string& nickname) {
+    _invitedUsers.erase(nickname);
 }
