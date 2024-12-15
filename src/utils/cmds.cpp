@@ -10,7 +10,6 @@ void Server::pass(int fd, std::istringstream &iss, User *user) {
 
     iss >> password;
 
-    // Check if user is already authenticated
     if (user->getIsAuth()) {
         sendErrorMessage(fd, "421 PASS :Already authenticated.\r\n");
         return;
@@ -41,7 +40,7 @@ void Server::nick(int fd, std::istringstream &iss, User *user) {
         return;
     }
 
-    if (user->getNickname().empty()) { // First-time nickname assignment
+    if (user->getNickname().empty()) {
         int count = getSameNicknameAmount(nickname);
         if (count > 0) {
             nickname += std::to_string(count + 1);
@@ -60,7 +59,6 @@ void Server::nick(int fd, std::istringstream &iss, User *user) {
         return;
     }
 
-    // Nickname change
     if (user->getNickname() != nickname) {
         int count = getSameNicknameAmount(nickname);
         if (count > 0) {
@@ -94,13 +92,12 @@ void Server::join(int fd, std::istringstream &iss, User *user) {
 
     Channel *chan = getChannel(channel);
 
-    // If the channel does not exist, create it and add the user
     if (chan == NULL) {
-        createChannel(channel, *user); // Create the channel
-        chan = getChannel(channel);   // Retrieve the newly created channel
+        createChannel(channel, *user);
+        chan = getChannel(channel);
         if (chan) {
-            chan->addUser(*user);      // Add the user to the channel's members list
-            chan->addOperator(user->getNickname());  // Automatically make the user an operator
+            chan->addUser(*user);
+            chan->addOperator(user->getNickname());
 
             std::cout << "User " << user->getNickname() << " created and joined channel " << channel << " as an operator." << std::endl;
             std::string notification = user->getNickname() + " has created and joined the channel as an operator.";
@@ -158,7 +155,6 @@ void Server::kick(int fd, std::istringstream &iss, User *user) {
     std::getline(iss, reason);
     reason = reason.empty() ? "No reason given" : reason.substr(1);
 
-    // Validate input
     if (channelName.empty() || userToKickNick.empty()) {
         sendErrorMessage(fd, "461 KICK :Not enough parameters\r\n");
         return;
@@ -203,7 +199,6 @@ void Server::invite(int fd, std::istringstream &iss, User *user) {
     iss >> inviteeNickname;
     iss >> channelName;
 
-    // Validate input
     if (inviteeNickname.empty() || channelName.empty()) {
         sendErrorMessage(fd, "461 INVITE :Not enough parameters\r\n");
         return;
@@ -215,34 +210,25 @@ void Server::invite(int fd, std::istringstream &iss, User *user) {
         return;
     }
 
-    // Check if the inviter is an operator of the channel
     if (!chan->isOperator(*user)) {
         sendErrorMessage(fd, "482 " + channelName + " :You're not a channel operator\r\n");
         return;
     }
 
-    // Check if the invitee is registered on the server (not just in the channel)
     User *invitee = getUserByNickname(inviteeNickname);
     if (invitee == NULL) {
         sendErrorMessage(fd, "401 " + inviteeNickname + " :No such nick\r\n");
         return;
     }
 
-    // Check if the invitee is already in the channel
     if (chan->isUserInChannel(*invitee)) {
         sendErrorMessage(fd, "443 " + inviteeNickname + " " + channelName + " :is already on channel\r\n");
         return;
     }
 
-    // Add the invitee to the channel's invite list
     chan->addInvitedUser(inviteeNickname);
-
-    // Notify the invitee of the invite
     sendMessage(invitee->getFd(), ":" + user->getNickname() + " has invited you dear " + inviteeNickname + " to join the channel -> " + channelName + "\r\n");
-
-    // Confirm to the inviter that the invite was sent
     sendMessage(fd, "You: " + user->getNickname() + " have invited " + inviteeNickname + " to " + channelName + "\r\n");
-
     std::cout << "User " << user->getNickname() << " invited " << inviteeNickname << " to channel " << channelName << std::endl;
 }
 
@@ -252,7 +238,6 @@ void Server::topic(int fd, std::istringstream &iss, User *user) {
 
     iss >> channel;
 
-    // Is there a topic set?
     std::getline(iss, topic);
 
     std::cout << "Channel: " << channel << " | Topic: " << topic << std::endl;
@@ -283,58 +268,49 @@ void Server::mode(int fd, std::istringstream &iss) {
     std::string modeString;
     std::string param;
 
-    // Parse input: channel
     iss >> channel;
-    channel = trim(channel);  // Trim whitespace from the channel
+    channel = trim(channel);
 
-    // Check if channel is valid
     if (channel.empty()) {
         sendErrorMessage(fd, "461 :Invalid channel name\r\n");
         return;
     }
 
-    // Parse the mode string (e.g., +i or -i) and parameter if present
     iss >> modeString;
-    modeString = trim(modeString);  // Trim whitespace from the mode string
+    modeString = trim(modeString);
 
-    // If the mode string is empty or incorrectly formatted
     if (modeString.empty() || (modeString[0] != '+' && modeString[0] != '-')) {
         sendErrorMessage(fd, "461 " + channel + " :Invalid MODE command\r\n");
         return;
     }
 
-    // If mode requires a parameter (e.g., +k or +o), get it
     if (iss) {
-        std::getline(iss, param); // Get the rest as parameter (password or nickname)
+        std::getline(iss, param);
         param = trim(param);
     }
 
     std::cout << "Mode String: " << modeString << ", Parameter: " << param << std::endl;
 
-    // Check if the channel exists
     Channel *chan = getChannel(channel);
     if (!chan) {
         sendErrorMessage(fd, "403 " + channel + " :No such channel\r\n");
         return;
     }
 
-    // Check if user is in the channel and has operator privileges
     User *user = getUser(fd);
     if (!user || !chan->isOperator(*user)) {
         sendErrorMessage(fd, "482 " + channel + " :You're not a channel operator\r\n");
         return;
     }
 
-    // Check that modeString is valid (at least 2 characters: [+/-][mode])
     if (modeString.size() < 2) {
         sendErrorMessage(fd, "461 " + channel + " :Invalid MODE command\r\n");
         return;
     }
 
-    bool setMode = (modeString[0] == '+');  // + to set, - to remove
-    char modeChar = modeString[1];          // The actual mode character (i, t, k, o, l)
+    bool setMode = (modeString[0] == '+');
+    char modeChar = modeString[1];
 
-    // Handle mode setting/removal
     switch (modeChar) {
         case 'i': // Invite-only
             chan->setInviteOnly(setMode);
@@ -356,7 +332,7 @@ void Server::mode(int fd, std::istringstream &iss) {
             }
             break;
 
-        case 'o': // Channel operator privilege
+        case 'o': // Channel operator
             if (setMode) {
                 if (param.empty()) {
                     sendErrorMessage(fd, "461 " + channel + " :Nickname required for +o\r\n");
@@ -392,15 +368,13 @@ void Server::mode(int fd, std::istringstream &iss) {
             return;
     }
 
-    // Notify the channel of the mode change (to all members)
     std::string modeResponse = "324 " + channel + " " + modeString + "\r\n";
-    sendMessage(fd, modeResponse); // Send the mode change to the user who issued the command
+    sendMessage(fd, modeResponse);
 
-    // Send the mode change to all other members of the channel
-    const std::vector<User>& members = chan->getMembersList();  // Get the members list
+    const std::vector<User>& members = chan->getMembersList();
     for (size_t i = 0; i < members.size(); ++i) {
         if (members[i].getFd() != fd) {
-            sendMessage(members[i].getFd(), modeResponse);  // Send mode change to other members
+            sendMessage(members[i].getFd(), modeResponse);
         }
     }
 }

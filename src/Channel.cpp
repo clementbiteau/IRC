@@ -237,11 +237,9 @@ void Channel::sendMessageToChannel(std::string message, std::string author)
 }
 
 void Channel::sendMessageToChannelPrv(std::string message, std::string author, int senderFd) {
-    // Construct message to broadcast
     std::string msg = ":" + author + " PRIVMSG " + this->getChannelName() + " :" + message + "\r\n";
     std::cout << "Author: " << author << std::endl;
 
-    // Iterate over users in the channel
     for (size_t i = 0; i < _users.size(); ++i) {
         std::cout << "User " << i << " : " << _users[i].getNickname() << std::endl;
 

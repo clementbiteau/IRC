@@ -333,7 +333,6 @@ void Server::privmsgCommand(int fd, std::string target, std::string message) {
         }
         channel->sendMessageToChannelPrv(message, user->getNickname(), fd);  // Exclude sender
     }
-    // Private message to a user
     else {
         for (size_t i = 0; i < _users.size(); i++) {
             if (_users[i].getNickname() == target) {
@@ -349,7 +348,6 @@ void Server::privmsgCommand(int fd, std::string target, std::string message) {
 void Server::whoisCommand(int fd, const std::string& requester, const std::string& nickname) {
     User *user = nullptr;
 
-    // Check if the user is in the active _users list
     for (size_t i = 0; i < _users.size(); i++) {
         if (_users[i].getNickname() == nickname) {
             user = &_users[i];
@@ -358,7 +356,6 @@ void Server::whoisCommand(int fd, const std::string& requester, const std::strin
     }
 
     if (!user) {
-        // User not found in _users, check _disconnectedUsers
         for (size_t i = 0; i < _disconnectedUsers.size(); i++) {
             if (_disconnectedUsers[i].getNickname() == nickname) {
                 std::string errorMessage = "401 " + requester + " " + nickname + " :No such nick (user disconnected)\r\n";
@@ -378,7 +375,6 @@ void Server::whoisCommand(int fd, const std::string& requester, const std::strin
 }
 
 void	Server::whowasCommand(int fd, const std::string& nickname) {
-    // Check _disconnectedUsers for the nickname
     for (size_t i = 0; i < _disconnectedUsers.size(); i++) {
         if (_disconnectedUsers[i].getNickname() == nickname) {
             std::string whowasResponse = "314 " + nickname + " " + _disconnectedUsers[i].getUsername() +
@@ -420,7 +416,6 @@ void Server::usering(int fd, std::istringstream &iss, User *user) {
     std::cout << "USER command processed: username: " << username 
               << ", realname: " << realname << std::endl;
 
-    // Complete registration if nickname is already set
     if (!user->getNickname().empty()) {
         user->setFlags("isRegistered", true);
         sendMessage(fd, ":localhost 001 " + user->getNickname() + 
