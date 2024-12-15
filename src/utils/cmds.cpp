@@ -114,46 +114,38 @@ void Server::join(int fd, std::istringstream &iss, User *user) {
 
     std::cout << "Channel " << channel << " exists, checking user limit and password." << std::endl;
 
-    // **Check User Limit**
     if (chan->getUserLimit() > 0 && chan->getMembersList().size() >= chan->getUserLimit()) {
         sendErrorMessage(fd, "471 " + channel + " :Cannot join channel (+l)\r\n");
         std::cout << "User: " << user->getNickname() << " failed to join channel #" << channel << " due to user limit (+l)" << std::endl;
         return;
     }
 
-    // **Check Password**
     if (chan->getChannelPassword() != "" && password != chan->getChannelPassword()) {
         sendErrorMessage(fd, "475 " + channel + " :Bad channel password\r\n");
         std::cout << "User: " << user->getNickname() << " failed to join channel #" << channel << " due to incorrect password" << std::endl;
         return;
     }
 
-    // **Check Invite-Only (+i)**
     if (chan->isInviteOnly() && !chan->isUserInvited(user->getNickname())) {
         sendErrorMessage(fd, "473 " + channel + " :Cannot join channel (+i)\r\n");
         std::cout << "User: " << user->getNickname() << " is not invited to join channel #" << channel << std::endl;
         return;
     }
 
-    // **Check if User is Already a Member**
     if (chan->isUserInChannel(*user)) {
         sendErrorMessage(fd, "443 " + channel + " :is already a member of the channel\r\n");
         std::cout << "User: " << user->getNickname() << " is already a member of channel #" << channel << std::endl;
         return;
     }
 
-    // Add user to the channel and notify others
     chan->addUser(*user);
     std::string notification = user->getNickname() + " has joined the channel.";
     chan->sendMessageToChannel(notification, user->getNickname());
 
-    // Send topic and names list to the user
     std::string joinMessage = RPL_TOPIC(user->getNickname(), chan->getChannelName(), chan->getChannelTopic()) + 
                                RPL_NAMREPLY(user->getNickname(), chan->getChannelName(), chan->getMembersListNames()) + 
                                RPL_ENDOFNAMES(user->getNickname(), chan->getChannelName());
     sendMessage(fd, joinMessage);
-
-    // Log the successful join
     std::cout << "User " << user->getNickname() << " successfully joined channel " << channel << std::endl;
 }
 
@@ -162,7 +154,6 @@ void Server::kick(int fd, std::istringstream &iss, User *user) {
     std::string userToKickNick;
     std::string reason;
 
-    // Parse the channel name, user to kick, and optional reason
     iss >> channelName >> userToKickNick;
     std::getline(iss, reason);
     reason = reason.empty() ? "No reason given" : reason.substr(1);
@@ -195,7 +186,7 @@ void Server::kick(int fd, std::istringstream &iss, User *user) {
         return;
     }
 
-    sendMessage(userToKick->getFd(), ":" + user->getNickname() + " KICK " + channelName + " " + userToKickNick + " :" + reason + "\r\n");
+    sendMessage(userToKick->getFd(), ":" + user->getNickname() + " kicked you out from: " + channelName + " dear " + userToKickNick + "... Cause: " + reason + "\r\n");
 
     chan->removeUser(*userToKick);
     std::string notification = ":" + user->getNickname() + " KICK " + channelName + " " + userToKickNick + " :" + reason + "\r\n";

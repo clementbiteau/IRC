@@ -40,12 +40,14 @@ III. Partie "Utils"
 => A) Commandes
       - Il y aura forcément un moment où l'on devra recoder les commandes existantes:
       ° PASS -> ok
-      ° USER -> ok
-      ° JOIN -> ok
       ° NICK -> ok
-      ° QUIT -> ok
+      ° USER -> ok
+      
+      ° JOIN -> ok
+      ° KICK -> ok
       ° INVITE -> ok
       ° TOPIC -> ok
+
       ° MODE -> ok
             - i -> ok
             - t -> ok
@@ -53,7 +55,10 @@ III. Partie "Utils"
             - o -> ok
             - l -> ok
       ° WHOIS -> ok
-      ° PRVMSG -> ok
+      ° PRIVMSG -> ok
+      
+      ° QUIT -> ok
+
        
 => B) Travailler sur une bonne nomenclature de nos enums:
       - le @ devant un operateur
