@@ -2,7 +2,7 @@
 # include "Server.hpp"
 
 void	Server::capls(int fd) {
-	sendMessage(fd, "CAP * LS :PASS NICK USER JOIN PART LIST PRIVMSG NOTICE MODE KICK INVITE TOPIC PING QUIT\r\n");
+	sendMessage(fd, "CAP * LS :PASS NICK USER JOIN PRIVMSG MODE KICK INVITE TOPIC PING QUIT\r\n");
 }
 
 void Server::pass(int fd, std::istringstream &iss, User *user) {
